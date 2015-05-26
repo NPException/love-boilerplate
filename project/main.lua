@@ -5,14 +5,16 @@
 --
 
 -- Set Library Folders
-LIBRARYPATH = "libs"
-LIBRARYPATH = LIBRARYPATH .. "."
+LIBRARYPATH = "libs."
 
 
 -- Get the libs manually
 local strict    = require( LIBRARYPATH.."strict"            )
 local slam      = require( LIBRARYPATH.."slam"              )
 local Gamestate = require( LIBRARYPATH.."hump.gamestate"    )
+
+Proxy = require( LIBRARYPATH.."proxy" )
+require( LIBRARYPATH.."misc"  )
 
 -- Handle some global variables that strict.lua may (incorrectly, ofcourse) complain about:
 class_commons = nil
@@ -25,42 +27,18 @@ SCALE = 2
 TILEWIDTH = 32
 TILEHEIGHT = 32
 
--- Creates a proxy via rawset.
--- Credit goes to vrld: https://github.com/vrld/Princess/blob/master/main.lua
--- easier, faster access and caching of resources like images and sound
--- or on demand resource loading
-local function Proxy(f)
-	return setmetatable({}, {__index = function(self, k)
-		local v = f(k)
-		rawset(self, k, v)
-		return v
-	end})
-end
+
 
 -- some standard proxies
-Image   = Proxy(function(k) return love.graphics.newImage('img/' .. k .. '.png') end)
-Sfx     = Proxy(function(k) return love.audio.newSource('sfx/' .. k .. '.ogg', 'static') end)
-Music   = Proxy(function(k) return love.audio.newSource('music/' .. k .. '.ogg', 'stream') end)
+Image   = Proxy.create(function(k) return love.graphics.newImage('img/' .. k .. '.png') end)
+Sfx     = Proxy.create(function(k) return love.audio.newSource('sfx/' .. k .. '.ogg', 'static') end)
+Music   = Proxy.create(function(k) return love.audio.newSource('music/' .. k .. '.ogg', 'stream') end)
 
 --[[ usage:
     love.graphics.draw(Image.background)
 -- or    
     Sfx.explosion:play()
 --]]
-    
--- require all files in a folder and its subfolders, this way we do not have to require every new file
-local function recursiveRequire(folder, tree)
-    local tree = tree or {}
-    for i,file in ipairs(love.filesystem.getDirectoryItems(folder)) do
-        local filename = folder.."/"..file
-        if love.filesystem.isDirectory(filename) then
-            recursiveRequire(filename)
-        elseif file ~= ".DS_Store" then
-            require(filename:gsub(".lua",""))
-        end
-    end
-    return tree
-end
 
 
 local function extractFileName(str)
@@ -69,11 +47,16 @@ end
 
 -- Initialization
 function love.load(arg)
+  if arg[#arg] == "-debug" then require("mobdebug").start() end
+  
 	math.randomseed(os.time())
 	love.graphics.setDefaultFilter("nearest", "nearest")
 	-- love.mouse.setVisible(false)
     -- print "Require Sources:"
-	recursiveRequire("src")
+	local loaded = recursiveRequire("src")
+  for k,v in pairs(loaded) do
+    print("loaded: "..k)
+  end
 	Gamestate.registerEvents()
 	Gamestate.switch(Menu)
 end

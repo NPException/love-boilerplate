@@ -1,4 +1,4 @@
--- Simple LÖVE Audio Manager
+-- Simple LOVE Audio Manager
 --
 -- Copyright (c) 2011 Matthias Richter
 -- Permission is hereby granted, free of charge, to any person obtaining a copy

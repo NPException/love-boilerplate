@@ -1,4 +1,4 @@
-love.graphics.setFont(love.graphics.newFont("fonts/HelvetiPixel.ttf", 16))
+--love.graphics.setFont(love.graphics.newFont("fonts/HelvetiPixel.ttf", 16))
 
 return {
 	UIGroup 	= require "src.UI.UIGroup",
