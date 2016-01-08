@@ -3,6 +3,7 @@
 --
 
 local Gamestate     = require (LIBRARYPATH.."hump.gamestate")
+local pmath 		= require (LIBRARYPATH.."pale.math")
 local timer         = require (LIBRARYPATH.."hump.timer")
 local Vector        = require (LIBRARYPATH.."hump.vector"	)
 local tween         = timer.tween
@@ -20,26 +21,31 @@ local bigFont   =   love.graphics.newFont(32)
 local smallFont =   love.graphics.newFont(16)
 
 local stage
+local map
 
 function Game:enter()
     stage = Stage()
-    for i=1,25 do
-	    local rectangle = Entity(stage, math.random(0,800), math.random(0,600))
-	    rectangle.w, rectangle.h = math.random(16,32), math.random(16,32)
-	    rectangle.r = 0
-	    rectangle.rect = true
-	    rectangle.go = Vector(math.random(-1,1)*32, math.random(-1,1)*32)
-	    rectangle.update = function(self, dt)
-	    	self.pos = self.pos + self.go * dt
-	    	if self.pos.x < 0 or self.pos.y < 0 then
-	    		self.pos = Vector(math.random(0,800), math.random(0,600))
-	    	end
-		end
 
-	    rectangle.draw = function(self)
-	    	love.graphics.setColor(255,255,255)
-	    	love.graphics.rectangle("line", self.pos.x-self.w/2, self.pos.y-self.h/2, self.w, self.h)
-		end
+    map = Map()
+    for i=1, 50 do
+    	local t = {blocked = true}
+    	map:set(i, 1, t)
+    	map:set(i, 36, t)
+    end
+    for i=1, 36 do
+    	local t = {blocked = true}
+    	map:set(1, i, t)
+    	map:set(50,i, t)
+    end
+    stage.map = map
+    map.draw = function(self)
+    	for i=1,50 do
+    		for j =1,40 do
+    			if self:get(i,j) then
+    				love.graphics.rectangle("fill", (i-1)*16, (j-1)*16, 16, 16)
+    			end
+    		end
+    	end
 	end
 
 	local ship = Entity(stage, 600, 200)
@@ -53,8 +59,9 @@ function Game:enter()
 	end
 
 	ship.update = function(self, dt)
+		self.lastDt = dt
 		self.vec = self.vec or {x=0, y=0}
-		local a = 100
+		local a = 1000
 		if love.keyboard.isDown("left") then
 			self.vec.x = self.vec.x-dt*a
 		end
@@ -71,11 +78,14 @@ function Game:enter()
 		self.vec.y =  self.vec.y*0.96
 		if math.abs(self.vec.x) > 10 then self.vec.x = self.vec.x*0.9 end
 		if math.abs(self.vec.y) > 10 then self.vec.y =  self.vec.y*0.9 end
+
+		-- if math.abs(self.vec.x) > 16 then self.vec.x = pmath.sig(self.vec.x)*16 end
+		-- if math.abs(self.vec.y) > 16 then self.vec.y = pmath.sig(self.vec.y)*16 end
 		
 		self.movement = Vector(self.vec.x*dt*10, self.vec.y*dt*10)
-
-		self.pos.x = self.pos.x + self.movement.x
-		self.pos.y = self.pos.y + self.movement.y
+		self:move(self.movement)
+		-- self.pos.x = self.pos.x + self.movement.x
+		-- self.pos.y = self.pos.y + self.movement.y
 	end
 
 	
@@ -90,5 +100,6 @@ end
 
 function Game:draw()
     stage:draw()
+    map:draw()
     love.graphics.print(love.timer.getFPS(), 0, 0)
 end

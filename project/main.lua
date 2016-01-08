@@ -58,7 +58,7 @@ function love.load(arg)
     print("loaded: "..k)
   end
 	Gamestate.registerEvents()
-	Gamestate.switch(Menu)
+	Gamestate.switch(Game)
 end
 
 -- Logic

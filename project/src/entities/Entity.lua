@@ -1,7 +1,7 @@
 --
--- Thing Class
+-- Entity Class
 --
--- 2014 Heachant, Tilmann Hars <headchant@headchant.com>
+-- 2015 Heachant, Tilmann Hars <headchant@headchant.com>
 --
 --
 
@@ -75,8 +75,6 @@ Entity = Class{
 	         x2 < x1+w1 and
 	         y1 < y2+h2 and
 	         y2 < y1+h1
-
-	 	
 	end,
 	axisSeperate = function(self, vectorAxis, polygonA, polygonB)
 
@@ -85,6 +83,70 @@ Entity = Class{
 		local mtv = self:getMTV(other)
 		self.pos = self.pos + mtv * 0.5
 		other.pos = other.pos - mtv*0.5
+	end,
+	isBlocked = function(self, i, j)
+		if self.stage.map then
+			return self.stage.map:isBlocked(i,j)
+		end
+		return false
+	end,
+	blocksize = 16,
+	move = function(self, movement)
+		
+		-- stop tunneling of objects through walls
+		local blocksize = 1.5
+		if math.abs(movement.x) > blocksize then
+			local l = math.abs(movement.x) - blocksize
+			local s = movement.x >= 0 and 1 or -1
+			self:move(Vector(s*blocksize, movement.y))
+			self:move(Vector(s*l, 0))
+			return
+		end
+		if math.abs(movement.y) > blocksize then
+			local l = math.abs(movement.y) - blocksize
+			local s = movement.y >= 0 and 1 or -1
+			self:move(Vector(movement.x, s*blocksize))
+			self:move(Vector(0, s*l))
+			return
+		end
+
+		-- for x
+		local pos = self.pos + movement
+
+		local stopped = false
+		local sx = movement.x < 0 and -1 or 1
+		local sy = movement.y < 0 and -1 or 1
+		local i,j = math.floor((pos.x+sx*self.w/2)/self.blocksize)+1, math.floor((self.pos.y)/self.blocksize)+1
+		if self:isBlocked(i,j) then 
+			stopped = true
+		end
+		local i,j = math.floor((pos.x+sx*self.w/2)/self.blocksize)+1, math.floor((self.pos.y-self.h/2)/self.blocksize)+1
+		if self:isBlocked(i,j) then 
+			stopped = true
+		end
+		local i,j = math.floor((pos.x+sx*self.w/2)/self.blocksize)+1, math.floor((self.pos.y+self.h/2)/self.blocksize)+1
+		if self:isBlocked(i,j) then 
+			stopped = true
+		end
+
+		if not stopped then self.pos.x = pos.x end
+
+		-- for y
+		local stopped = false
+		
+		local i,j = math.floor((self.pos.x)/self.blocksize)+1, math.floor((pos.y+sy*self.h/2)/self.blocksize)+1
+		if self:isBlocked(i,j) then 
+			stopped = true
+		end
+		local i,j = math.floor((self.pos.x-self.w/2)/self.blocksize)+1, math.floor((pos.y+sy*self.h/2)/self.blocksize)+1
+		if self:isBlocked(i,j) then 
+			stopped = true
+		end
+		local i,j = math.floor((self.pos.x+self.w/2)/self.blocksize)+1, math.floor((pos.y+sy*self.h/2)/self.blocksize)+1
+		if self:isBlocked(i,j) then 
+			stopped = true
+		end
+		if not stopped then self.pos.y = pos.y end
 	end
 }
 
